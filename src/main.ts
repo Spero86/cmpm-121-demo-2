@@ -23,6 +23,7 @@ const createButton = (text: string, id: string): HTMLButtonElement => {
 };
 
 const clearButton = createButton("Clear", "clearButton");
+clearButton.id = "clearButton";
 app.appendChild(clearButton);
 const pen = canvas.getContext("2d")!;
 let drawing = false;
