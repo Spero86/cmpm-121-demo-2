@@ -172,9 +172,11 @@ let currentSticker: string | null = null;
 
 function getMousePosition(event: MouseEvent): { offsetX: number; offsetY: number } {
     const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
     return {
-        offsetX: event.clientX - rect.left,
-        offsetY: event.clientY - rect.top
+        offsetX: (event.clientX - rect.left) * scaleX,
+        offsetY: (event.clientY - rect.top) * scaleY
     };
 }
 
