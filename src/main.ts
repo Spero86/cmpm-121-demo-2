@@ -24,17 +24,29 @@ const createButton = (text: string, id: string): HTMLButtonElement => {
 };
 
 // Step 8 - Multiple stickers
-const s1Button = createButton("🎸", "s1Button");
-s1Button.id = "s1Button";
-app.appendChild(s1Button);
+// Step 9 - Custom stickers
+const customStickerButton = createButton("Custom Sticker", "customStickerButton");
+customStickerButton.id = "customStickerButton";
+app.appendChild(customStickerButton);
 
-const s2Button = createButton("😳", "s2Button");
-s2Button.id = "s2Button";
-app.appendChild(s2Button);
+const stickers = [
+    { emoji: '🎸', id: 's1Button' },
+    { emoji: '😳', id: 's2Button' },
+    { emoji: '🏀', id: 's3Button' }
+];
 
-const s3Button = createButton("🏀", "s3Button");
-s3Button.id = "s3Button";
-app.appendChild(s3Button);
+stickers.forEach(sticker => {
+    const button = document.createElement('button');
+    button.innerText = sticker.emoji;
+    button.id = sticker.id;
+    app.appendChild(button);
+    button.addEventListener('click', () => {
+        currentSticker = sticker.emoji;
+        toolPreview = null;
+        updateCurrentTool(button);
+        canvas.dispatchEvent(new Event('tool-moved'));
+    });
+});
 
 const clearButton = createButton("Clear", "clearButton");
 clearButton.id = "clearButton";
@@ -153,9 +165,9 @@ let drawing = false;
 let points: (penLine | Sticker)[] = [];
 let currentLine: penLine | null = null;
 let redoStack: (penLine | Sticker)[] = [];
-let currentThickness = 1; // Default thickness
+let currentThickness = 1; 
 let toolPreview: ToolPreview | StickerPreview | null = null;
-let previewColor = 'black'; // Default color for thin preview
+let previewColor = 'black'; 
 let currentSticker: string | null = null;
 
 function getMousePosition(event: MouseEvent): { offsetX: number; offsetY: number } {
@@ -164,6 +176,12 @@ function getMousePosition(event: MouseEvent): { offsetX: number; offsetY: number
         offsetX: event.clientX - rect.left,
         offsetY: event.clientY - rect.top
     };
+}
+
+function updateCurrentTool(selectedButton: HTMLButtonElement) {
+    const allButtons = app.querySelectorAll('button');
+    allButtons.forEach(button => button.classList.remove('selectedTool'));
+    selectedButton.classList.add('selectedTool');
 }
 
 function moveTool(event: MouseEvent) {
@@ -274,55 +292,51 @@ redoButton.addEventListener('click', () => {
 
 thinButton.addEventListener('click', () => {
     currentThickness = 1;
-    previewColor = 'black';
-    currentSticker = null;
-    thinButton.classList.add('currentTool');
-    thickButton.classList.remove('currentTool');
-    s1Button.classList.remove('currentTool');
-    s2Button.classList.remove('currentTool');
-    s3Button.classList.remove('currentTool');
+    previewColor = 'black'; 
+    currentSticker = null; 
+    updateCurrentTool(thinButton);
 });
 
 thickButton.addEventListener('click', () => {
     currentThickness = 5;
     previewColor = 'gray';
     currentSticker = null; 
-    thickButton.classList.add('currentTool');
-    thinButton.classList.remove('currentTool');
-    s1Button.classList.remove('currentTool');
-    s2Button.classList.remove('currentTool');
-    s3Button.classList.remove('currentTool');
+    updateCurrentTool(thickButton);
 });
 
-s1Button.addEventListener('click', () => {
-    currentSticker = '🎸';
-    toolPreview = null; 
-    s1Button.classList.add('currentTool');
-    s2Button.classList.remove('currentTool');
-    s3Button.classList.remove('currentTool');
-    thinButton.classList.remove('currentTool');
-    thickButton.classList.remove('currentTool');
-    canvas.dispatchEvent(new Event('tool-moved'));
+customStickerButton.addEventListener('click', () => {
+    const customSticker = prompt('Enter your custom sticker:', '');
+    if (customSticker) {
+        const customStickerObj = { emoji: customSticker, id: `sticker${stickers.length + 1}Button` };
+        stickers.push(customStickerObj);
+        const button = document.createElement('button');
+        button.innerText = customSticker;
+        button.id = customStickerObj.id;
+        app.appendChild(button);
+        button.addEventListener('click', () => {
+            currentSticker = customSticker;
+            toolPreview = null;
+            updateCurrentTool(button);
+            canvas.dispatchEvent(new Event('tool-moved'));
+        });
+    }
 });
 
-s2Button.addEventListener('click', () => {
-    currentSticker = '😳';
-    toolPreview = null;
-    s2Button.classList.add('currentTool');
-    s1Button.classList.remove('currentTool');
-    s3Button.classList.remove('currentTool');
-    thinButton.classList.remove('currentTool');
-    thickButton.classList.remove('currentTool');
-    canvas.dispatchEvent(new Event('tool-moved'));
-});
+exportButton.addEventListener('click', () => {
 
-s3Button.addEventListener('click', () => {
-    currentSticker = '🏀';
-    toolPreview = null;
-    s3Button.classList.add('currentTool');
-    s1Button.classList.remove('currentTool');
-    s2Button.classList.remove('currentTool');
-    thinButton.classList.remove('currentTool');
-    thickButton.classList.remove('currentTool');
-    canvas.dispatchEvent(new Event('tool-moved'));
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = 1024;
+    exportCanvas.height = 1024;
+    const exportContext = exportCanvas.getContext('2d')!;
+    
+    exportContext.scale(4, 4);
+
+    points.forEach(item => item.display(exportContext));
+    
+    exportCanvas.toBlob(blob => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob!);
+        link.download = 'sketchpad_export.png';
+        link.click();
+    });
 });
