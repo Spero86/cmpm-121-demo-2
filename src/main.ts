@@ -36,14 +36,25 @@ const redoButton = createButton("Redo", "redoButton");
 redoButton.id = "redoButton";
 app.appendChild(redoButton);
 
+// Step 6 - Multiple markers
+const thinButton = createButton("Thin", "thinButton");
+thinButton.id = "thinButton";
+app.appendChild(thinButton);
+
+const thickButton = createButton("Thick", "thickButton");
+thickButton.id = "thickButton";
+app.appendChild(thickButton);
+
+
 const pen = canvas.getContext("2d") as CanvasRenderingContext2D;
 
 // Step 5 - Display commands
 class penLine {
     private points: { x: number, y: number }[] = [];
-
-    constructor(x: number, y: number) {
+    private thickness: number;
+    constructor(x: number, y: number, thickness: number) {
         this.points.push({ x, y });
+        this.thickness = thickness;
     }
     drag(x: number, y: number) {
         this.points.push({ x, y });
@@ -55,6 +66,7 @@ class penLine {
         for (let i = 1; i < this.points.length; i++) {
             pen.lineTo(this.points[i].x, this.points[i].y);
         }
+        pen.lineWidth = this.thickness;
         pen.stroke();
     }
 }
@@ -63,6 +75,7 @@ let drawing = false;
 let points: penLine[] = [];
 let currentLine: penLine | null = null;
 let redoStack: penLine[] = [];
+let currentThickness = 1;
 
 function getMousePosition(event: MouseEvent): { offsetX: number; offsetY: number } {
     const rect = canvas.getBoundingClientRect();
@@ -76,7 +89,7 @@ function startDrawing(event: MouseEvent): void {
     drawing = true;
 
     const { offsetX, offsetY } = getMousePosition(event);
-    currentLine = new penLine(offsetX, offsetY);
+    currentLine = new penLine(offsetX, offsetY, currentThickness);
     points.push(currentLine);
 
 }
@@ -134,4 +147,16 @@ redoButton.addEventListener('click', () => {
         }
         canvas.dispatchEvent(new Event('drawing-changed'));
     }
+});
+
+thinButton.addEventListener('click', () => {
+    currentThickness = 1;
+    thinButton.classList.add('currentTool');
+    thickButton.classList.remove('currentTool');
+});
+
+thickButton.addEventListener('click', () => {
+    currentThickness = 5;
+    thickButton.classList.add('currentTool');
+    thinButton.classList.remove('currentTool');
 });
