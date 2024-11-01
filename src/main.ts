@@ -35,13 +35,18 @@ const stopDrawing = (): void => {
 };
 const draw = (event: MouseEvent): void => {
     if (!drawing) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
     pen.lineWidth = 2;
     pen.lineCap = "round";
     pen.strokeStyle = "black";
-    pen.lineTo(event.offsetX, event.offsetY);
+    pen.lineTo(x, y);
     pen.stroke();
     pen.beginPath();
-    pen.moveTo(event.offsetX, event.offsetY);
+    pen.moveTo(x, y);
 };
 
 canvas.addEventListener("mousedown", startDrawing);
