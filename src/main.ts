@@ -24,9 +24,7 @@ const createButton = (text: string, id: string): HTMLButtonElement => {
 
 const clearButton = createButton("Clear", "clearButton");
 app.appendChild(clearButton);
-
-const pen = canvas.getContext("2d") as CanvasRenderingContext2D;
-
+const pen = canvas.getContext("2d")!;
 let drawing = false;
 
 const startDrawing = (): void => { drawing = true; };
@@ -49,4 +47,6 @@ canvas.addEventListener("mousedown", startDrawing);
 canvas.addEventListener("mouseup", stopDrawing);
 canvas.addEventListener("mousemove", draw);
 
-clearButton.addEventListener("click", () => pen.clearRect(0, 0, canvas.width, canvas.height));
+clearButton.addEventListener("click", () => {
+    pen.clearRect(0, 0, canvas.width, canvas.height);
+});
