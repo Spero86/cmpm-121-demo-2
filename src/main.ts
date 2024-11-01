@@ -71,11 +71,34 @@ class penLine {
     }
 }
 
+// Step 7 - Tool preview
+class ToolPreview {
+    private x: number;
+    private y: number;
+    private thickness: number;
+    constructor(x: number, y: number, thickness: number) {
+        this.x = x;
+        this.y = y;
+        this.thickness = thickness;
+    }
+    updatePosition(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+    }
+    draw(context: CanvasRenderingContext2D) {
+        context.beginPath();
+        context.arc(this.x, this.y, this.thickness / 2, 0, Math.PI * 2);
+        context.fillStyle = 'rgba(0, 0, 0, 180)';
+        context.fill();
+    }
+}
+
 let drawing = false;
 let points: penLine[] = [];
 let currentLine: penLine | null = null;
 let redoStack: penLine[] = [];
 let currentThickness = 1;
+let toolPreview: ToolPreview | null = null;
 
 function getMousePosition(event: MouseEvent): { offsetX: number; offsetY: number } {
     const rect = canvas.getBoundingClientRect();
@@ -85,12 +108,26 @@ function getMousePosition(event: MouseEvent): { offsetX: number; offsetY: number
     };
 }
 
+function moveTool(event: MouseEvent) {
+    if (drawing) return;
+    const { offsetX, offsetY } = getMousePosition(event);
+    if (!toolPreview) {
+        toolPreview = new ToolPreview(offsetX, offsetY, currentThickness);
+    } else {
+        toolPreview.updatePosition(offsetX, offsetY);
+    }
+    canvas.dispatchEvent(new Event('tool-moved'));
+}
+
+
 function startDrawing(event: MouseEvent): void {
     drawing = true;
 
     const { offsetX, offsetY } = getMousePosition(event);
     currentLine = new penLine(offsetX, offsetY, currentThickness);
     points.push(currentLine);
+
+    toolPreview = null;
 
 }
 
@@ -116,10 +153,22 @@ canvas.addEventListener("mousedown", startDrawing);
 canvas.addEventListener("mousemove", draw);
 canvas.addEventListener("mouseup", stopDrawing);
 canvas.addEventListener("mouseleave", stopDrawing);
+canvas.addEventListener('mousemove', moveTool);
 
 canvas.addEventListener('drawing-changed', () => {
     pen.clearRect(0, 0, canvas.width, canvas.height);
     points.forEach(line => line.display(pen));
+
+    if (toolPreview) {
+        toolPreview.draw(pen);
+    }
+});
+canvas.addEventListener('tool-moved', () => {
+    pen.clearRect(0, 0, canvas.width, canvas.height);
+    points.forEach(line => line.display(pen));
+    if (toolPreview) {
+        toolPreview.draw(pen);
+    }
 });
 
 clearButton.addEventListener("click", () => {
