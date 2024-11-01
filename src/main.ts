@@ -25,33 +25,45 @@ const createButton = (text: string, id: string): HTMLButtonElement => {
 const clearButton = createButton("Clear", "clearButton");
 clearButton.id = "clearButton";
 app.appendChild(clearButton);
-const pen = canvas.getContext("2d")!;
+
 let drawing = false;
+const pen = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-const startDrawing = (): void => { drawing = true; };
-const stopDrawing = (): void => {
-    drawing = false;
-    pen.beginPath();
-};
-const draw = (event: MouseEvent): void => {
-    if (!drawing) return;
-
+// Helper function to get mouse position relative to the canvas
+function getMousePosition(event: MouseEvent): { offsetX: number; offsetY: number } {
     const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    return {
+        offsetX: event.clientX - rect.left,
+        offsetY: event.clientY - rect.top
+    };
+}
 
-    pen.lineWidth = 2;
-    pen.lineCap = "round";
-    pen.strokeStyle = "black";
-    pen.lineTo(event.offsetX, event.offsetY);
-    pen.stroke();
+// Start drawing when mouse is pressed down
+function startDrawing(event: MouseEvent): void {
+    drawing = true;
+    const { offsetX, offsetY } = getMousePosition(event);
     pen.beginPath();
-    pen.moveTo(event.offsetX, event.offsetY);
-};
+    pen.moveTo(offsetX, offsetY);
+}
 
+// Draw on the canvas as the mouse moves
+function draw(event: MouseEvent): void {
+    if (!drawing) return;
+    const { offsetX, offsetY } = getMousePosition(event);
+    pen.lineTo(offsetX, offsetY);
+    pen.stroke();
+}
+
+// Stop drawing when mouse is released
+function stopDrawing(): void {
+    drawing = false;
+}
+
+// Attach event listeners to the canvas
 canvas.addEventListener("mousedown", startDrawing);
-canvas.addEventListener("mouseup", stopDrawing);
 canvas.addEventListener("mousemove", draw);
+canvas.addEventListener("mouseup", stopDrawing);
+canvas.addEventListener("mouseleave", stopDrawing);
 
 clearButton.addEventListener("click", () => {
     pen.clearRect(0, 0, canvas.width, canvas.height);
