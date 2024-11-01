@@ -59,10 +59,12 @@ h1 {
   box-shadow: 2 2px 5px rgba(0, 0, 0, 0.3); 
 }
 
+/* Step 2 */
 #clearButton{
   margin-top: 10px;
 }
 
+/* Step 4 */
 #undoButton{
   margin-top: 10px;
 }
