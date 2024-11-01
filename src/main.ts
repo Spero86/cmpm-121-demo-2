@@ -15,6 +15,7 @@ canvas.id = "canvasPad";
 app.appendChild(canvas);
 
 // Step 2 - Simple marker drawing
+// Step 3 - Display list and observer
 const createButton = (text: string, id: string): HTMLButtonElement => {
     const button = document.createElement("button");
     button.textContent = text;
