@@ -70,7 +70,7 @@ const thickButton = createButton("Thick", "thickButton");
 thickButton.id = "thickButton";
 app.appendChild(thickButton);
 
-// Step 10 - High resolution export
+// Step 10 - High-resolution export
 const exportButton = createButton("Export", "exportButton");
 exportButton.id = "exportButton";
 app.appendChild(exportButton);
@@ -305,7 +305,7 @@ thickButton.addEventListener('click', () => {
 });
 
 customStickerButton.addEventListener('click', () => {
-    const customSticker = prompt('Enter your custom sticker:', '');
+    const customSticker = prompt('Enter your custom sticker:', '♻️');
     if (customSticker) {
         const customStickerObj = { emoji: customSticker, id: `sticker${stickers.length + 1}Button` };
         stickers.push(customStickerObj);
