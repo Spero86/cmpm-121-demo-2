@@ -23,6 +23,19 @@ const createButton = (text: string, id: string): HTMLButtonElement => {
     return button;
 };
 
+// Step 8 - Multiple stickers
+const s1Button = createButton("🎸", "s1Button");
+s1Button.id = "s1Button";
+app.appendChild(s1Button);
+
+const s2Button = createButton("😳", "s2Button");
+s2Button.id = "s2Button";
+app.appendChild(s2Button);
+
+const s3Button = createButton("🏀", "s3Button");
+s3Button.id = "s3Button";
+app.appendChild(s3Button);
+
 const clearButton = createButton("Clear", "clearButton");
 clearButton.id = "clearButton";
 app.appendChild(clearButton);
@@ -45,13 +58,19 @@ const thickButton = createButton("Thick", "thickButton");
 thickButton.id = "thickButton";
 app.appendChild(thickButton);
 
+// Step 10 - High resolution export
+const exportButton = createButton("Export", "exportButton");
+exportButton.id = "exportButton";
+app.appendChild(exportButton);
 
 const pen = canvas.getContext("2d") as CanvasRenderingContext2D;
 
 // Step 5 - Display commands
 class penLine {
+
     private points: { x: number, y: number }[] = [];
     private thickness: number;
+
     constructor(x: number, y: number, thickness: number) {
         this.points.push({ x, y });
         this.thickness = thickness;
@@ -76,10 +95,13 @@ class ToolPreview {
     private x: number;
     private y: number;
     private thickness: number;
-    constructor(x: number, y: number, thickness: number) {
+    private color: string;
+
+    constructor(x: number, y: number, thickness: number, color: string) {
         this.x = x;
         this.y = y;
         this.thickness = thickness;
+        this.color = color;
     }
     updatePosition(x: number, y: number) {
         this.x = x;
@@ -88,17 +110,53 @@ class ToolPreview {
     draw(pen: CanvasRenderingContext2D) {
         pen.beginPath();
         pen.arc(this.x, this.y, this.thickness / 2, 0, Math.PI * 2);
-        pen.fillStyle = 'rgba(0, 0, 0, 180)';
+        pen.fillStyle = this.color;
         pen.fill();
     }
 }
 
+class Sticker {
+    private x: number;
+    private y: number;
+    private emoji: string;
+    constructor(x: number, y: number, emoji: string) {
+        this.x = x;
+        this.y = y;
+        this.emoji = emoji;
+    }
+    display(pen: CanvasRenderingContext2D) {
+        pen.font = '24px serif';
+        pen.fillText(this.emoji, this.x, this.y);
+    }
+}
+
+class StickerPreview {
+    private x: number;
+    private y: number;
+    private emoji: string;
+    constructor(x: number, y: number, emoji: string) {
+        this.x = x;
+        this.y = y;
+        this.emoji = emoji;
+    }
+    updatePosition(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+    }
+    draw(pen: CanvasRenderingContext2D) {
+        pen.font = '24px serif';
+        pen.fillText(this.emoji, this.x, this.y);
+    }
+}
+
 let drawing = false;
-let points: penLine[] = [];
+let points: (penLine | Sticker)[] = [];
 let currentLine: penLine | null = null;
-let redoStack: penLine[] = [];
-let currentThickness = 1;
-let toolPreview: ToolPreview | null = null;
+let redoStack: (penLine | Sticker)[] = [];
+let currentThickness = 1; // Default thickness
+let toolPreview: ToolPreview | StickerPreview | null = null;
+let previewColor = 'black'; // Default color for thin preview
+let currentSticker: string | null = null;
 
 function getMousePosition(event: MouseEvent): { offsetX: number; offsetY: number } {
     const rect = canvas.getBoundingClientRect();
@@ -111,24 +169,39 @@ function getMousePosition(event: MouseEvent): { offsetX: number; offsetY: number
 function moveTool(event: MouseEvent) {
     if (drawing) return;
     const { offsetX, offsetY } = getMousePosition(event);
-    if (!toolPreview) {
-        toolPreview = new ToolPreview(offsetX, offsetY, currentThickness);
+
+    if (currentSticker) {
+        if (!toolPreview || !(toolPreview instanceof StickerPreview)) {
+            toolPreview = new StickerPreview(offsetX, offsetY, currentSticker);
+        } else {
+            toolPreview.updatePosition(offsetX, offsetY);
+        }
     } else {
-        toolPreview.updatePosition(offsetX, offsetY);
+        if (!toolPreview || !(toolPreview instanceof ToolPreview)) {
+            toolPreview = new ToolPreview(offsetX, offsetY, currentThickness, previewColor);
+        } else {
+            toolPreview.updatePosition(offsetX, offsetY);
+        }
     }
     canvas.dispatchEvent(new Event('tool-moved'));
 }
 
 
 function startDrawing(event: MouseEvent): void {
-    drawing = true;
 
     const { offsetX, offsetY } = getMousePosition(event);
-    currentLine = new penLine(offsetX, offsetY, currentThickness);
-    points.push(currentLine);
 
-    toolPreview = null;
-
+    if (currentSticker) {
+        const sticker = new Sticker(offsetX, offsetY, currentSticker);
+        points.push(sticker);
+        toolPreview = null;
+        canvas.dispatchEvent(new Event('drawing-changed'));
+    } else {
+        drawing = true;
+        currentLine = new penLine(offsetX, offsetY, currentThickness);
+        points.push(currentLine);
+        toolPreview = null;
+    }
 }
 
 function draw(event: MouseEvent): void {
@@ -157,7 +230,7 @@ canvas.addEventListener('mousemove', moveTool);
 
 canvas.addEventListener('drawing-changed', () => {
     pen.clearRect(0, 0, canvas.width, canvas.height);
-    points.forEach(line => line.display(pen));
+    points.forEach(item => item.display(pen));
 
     if (toolPreview) {
         toolPreview.draw(pen);
@@ -165,7 +238,8 @@ canvas.addEventListener('drawing-changed', () => {
 });
 canvas.addEventListener('tool-moved', () => {
     pen.clearRect(0, 0, canvas.width, canvas.height);
-    points.forEach(line => line.display(pen));
+    points.forEach(item => item.display(pen));
+
     if (toolPreview) {
         toolPreview.draw(pen);
     }
@@ -180,9 +254,9 @@ clearButton.addEventListener("click", () => {
 
 undoButton.addEventListener('click', () => {
     if (points.length > 0) {
-        const lastLine = points.pop();
-        if (lastLine) {
-            redoStack.push(lastLine);
+        const lastItem = points.pop();
+        if (lastItem) {
+            redoStack.push(lastItem);
         }
         canvas.dispatchEvent(new Event('drawing-changed'));
     }
@@ -190,9 +264,9 @@ undoButton.addEventListener('click', () => {
 
 redoButton.addEventListener('click', () => {
     if (redoStack.length > 0) {
-        const lastLine = redoStack.pop();
-        if (lastLine) {
-            points.push(lastLine);
+        const lastItem = redoStack.pop();
+        if (lastItem) {
+            points.push(lastItem);
         }
         canvas.dispatchEvent(new Event('drawing-changed'));
     }
@@ -200,12 +274,55 @@ redoButton.addEventListener('click', () => {
 
 thinButton.addEventListener('click', () => {
     currentThickness = 1;
+    previewColor = 'black';
+    currentSticker = null;
     thinButton.classList.add('currentTool');
     thickButton.classList.remove('currentTool');
+    s1Button.classList.remove('currentTool');
+    s2Button.classList.remove('currentTool');
+    s3Button.classList.remove('currentTool');
 });
 
 thickButton.addEventListener('click', () => {
     currentThickness = 5;
+    previewColor = 'gray';
+    currentSticker = null; 
     thickButton.classList.add('currentTool');
     thinButton.classList.remove('currentTool');
+    s1Button.classList.remove('currentTool');
+    s2Button.classList.remove('currentTool');
+    s3Button.classList.remove('currentTool');
+});
+
+s1Button.addEventListener('click', () => {
+    currentSticker = '🎸';
+    toolPreview = null; 
+    s1Button.classList.add('currentTool');
+    s2Button.classList.remove('currentTool');
+    s3Button.classList.remove('currentTool');
+    thinButton.classList.remove('currentTool');
+    thickButton.classList.remove('currentTool');
+    canvas.dispatchEvent(new Event('tool-moved'));
+});
+
+s2Button.addEventListener('click', () => {
+    currentSticker = '😳';
+    toolPreview = null;
+    s2Button.classList.add('currentTool');
+    s1Button.classList.remove('currentTool');
+    s3Button.classList.remove('currentTool');
+    thinButton.classList.remove('currentTool');
+    thickButton.classList.remove('currentTool');
+    canvas.dispatchEvent(new Event('tool-moved'));
+});
+
+s3Button.addEventListener('click', () => {
+    currentSticker = '🏀';
+    toolPreview = null;
+    s3Button.classList.add('currentTool');
+    s1Button.classList.remove('currentTool');
+    s2Button.classList.remove('currentTool');
+    thinButton.classList.remove('currentTool');
+    thickButton.classList.remove('currentTool');
+    canvas.dispatchEvent(new Event('tool-moved'));
 });
