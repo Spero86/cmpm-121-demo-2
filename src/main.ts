@@ -36,11 +36,33 @@ const redoButton = createButton("Redo", "redoButton");
 redoButton.id = "redoButton";
 app.appendChild(redoButton);
 
-let drawing = false;
 const pen = canvas.getContext("2d") as CanvasRenderingContext2D;
-let points: { x: number, y: number }[][] = [];
-let currentLine: { x: number, y: number }[] = [];
-let redoStack: { x: number, y: number }[][] = [];
+
+// Step 5 - Display 
+class penLine {
+    private points: { x: number, y: number }[] = [];
+
+    constructor(x: number, y: number) {
+        this.points.push({ x, y });
+    }
+    drag(x: number, y: number) {
+        this.points.push({ x, y });
+    }
+    display(pen: CanvasRenderingContext2D) {
+        if (this.points.length < 2) return;
+        pen.beginPath();
+        pen.moveTo(this.points[0].x, this.points[0].y);
+        for (let i = 1; i < this.points.length; i++) {
+            pen.lineTo(this.points[i].x, this.points[i].y);
+        }
+        pen.stroke();
+    }
+}
+
+let drawing = false;
+let points: penLine[] = [];
+let currentLine: penLine | null = null;
+let redoStack: penLine[] = [];
 
 function getMousePosition(event: MouseEvent): { offsetX: number; offsetY: number } {
     const rect = canvas.getBoundingClientRect();
@@ -53,31 +75,28 @@ function getMousePosition(event: MouseEvent): { offsetX: number; offsetY: number
 function startDrawing(event: MouseEvent): void {
     drawing = true;
 
-    currentLine = [];
-    addPoint(event);
+    const { offsetX, offsetY } = getMousePosition(event);
+    currentLine = new penLine(offsetX, offsetY);
+    points.push(currentLine);
 
 }
 
 function draw(event: MouseEvent): void {
     if (!drawing) return;
 
-    addPoint(event);
+    if (!drawing || !currentLine) return;
+    const { offsetX, offsetY } = getMousePosition(event);
+    currentLine.drag(offsetX, offsetY);
+    canvas.dispatchEvent(new Event('drawing-changed'));
 }
 
 function stopDrawing(): void {
 
     if (drawing) {
-        points.push(currentLine);
-        currentLine = []; 
         drawing = false;
+        currentLine = null;
         canvas.dispatchEvent(new Event('drawing-changed'));
     }
-}
-
-function addPoint(event: MouseEvent) {
-    const { offsetX, offsetY } = getMousePosition(event);
-    currentLine.push({ x: offsetX, y: offsetY });
-    canvas.dispatchEvent(new Event('drawing-changed'));
 }
 
 canvas.addEventListener("mousedown", startDrawing);
@@ -87,34 +106,11 @@ canvas.addEventListener("mouseleave", stopDrawing);
 
 canvas.addEventListener('drawing-changed', () => {
     pen.clearRect(0, 0, canvas.width, canvas.height);
-    points.forEach(line => {
-        pen.beginPath();
-        line.forEach((point, index) => {
-            if (index === 0) {
-                pen.moveTo(point.x, point.y);
-            } else {
-                pen.lineTo(point.x, point.y);
-            }
-        });
-        pen.stroke();
-    });
-  
-    if (currentLine.length > 0) {
-        pen.beginPath();
-        currentLine.forEach((point, index) => {
-            if (index === 0) {
-                pen.moveTo(point.x, point.y);
-            } else {
-                pen.lineTo(point.x, point.y);
-            }
-        });
-        pen.stroke();
-    }
+    points.forEach(line => line.display(pen));
 });
 
 clearButton.addEventListener("click", () => {
-    points = [];
-    currentLine = []; 
+    points = []; 
     redoStack = [];
     pen.clearRect(0, 0, canvas.width, canvas.height);
     canvas.dispatchEvent(new Event('drawing-changed'));
