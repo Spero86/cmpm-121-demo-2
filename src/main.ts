@@ -85,11 +85,11 @@ class ToolPreview {
         this.x = x;
         this.y = y;
     }
-    draw(context: CanvasRenderingContext2D) {
-        context.beginPath();
-        context.arc(this.x, this.y, this.thickness / 2, 0, Math.PI * 2);
-        context.fillStyle = 'rgba(0, 0, 0, 180)';
-        context.fill();
+    draw(pen: CanvasRenderingContext2D) {
+        pen.beginPath();
+        pen.arc(this.x, this.y, this.thickness / 2, 0, Math.PI * 2);
+        pen.fillStyle = 'rgba(0, 0, 0, 180)';
+        pen.fill();
     }
 }
 
