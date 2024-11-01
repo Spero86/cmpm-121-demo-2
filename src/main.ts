@@ -14,6 +14,10 @@ const canvas = document.createElement("canvas");
 canvas.id = "canvasPad";
 app.appendChild(canvas);
 
+const container = document.createElement("div");
+container.id = 'canvasContainer';
+document.body.appendChild(container);
+
 // Step 2 - Simple marker drawing
 // Step 3 - Display list and observer
 const createButton = (text: string, id: string): HTMLButtonElement => {
@@ -29,8 +33,9 @@ app.appendChild(clearButton);
 
 let drawing = false;
 const pen = canvas.getContext("2d") as CanvasRenderingContext2D;
+let points: { x: number, y: number }[][] = [];
+let currentLine: { x: number, y: number }[] = [];
 
-// Helper function to get mouse position relative to the canvas
 function getMousePosition(event: MouseEvent): { offsetX: number; offsetY: number } {
     const rect = canvas.getBoundingClientRect();
     return {
@@ -39,33 +44,68 @@ function getMousePosition(event: MouseEvent): { offsetX: number; offsetY: number
     };
 }
 
-// Start drawing when mouse is pressed down
 function startDrawing(event: MouseEvent): void {
     drawing = true;
-    const { offsetX, offsetY } = getMousePosition(event);
-    pen.beginPath();
-    pen.moveTo(offsetX, offsetY);
+
+    currentLine = [];
+    addPoint(event);
+
 }
 
-// Draw on the canvas as the mouse moves
 function draw(event: MouseEvent): void {
     if (!drawing) return;
-    const { offsetX, offsetY } = getMousePosition(event);
-    pen.lineTo(offsetX, offsetY);
-    pen.stroke();
+
+    addPoint(event);
 }
 
-// Stop drawing when mouse is released
 function stopDrawing(): void {
-    drawing = false;
+
+    if (drawing) {
+        points.push(currentLine);
+        drawing = false;
+        canvas.dispatchEvent(new Event('drawing-changed'));
+    }
 }
 
-// Attach event listeners to the canvas
+function addPoint(event: MouseEvent) {
+    const { offsetX, offsetY } = getMousePosition(event);
+    currentLine.push({ x: offsetX, y: offsetY });
+    canvas.dispatchEvent(new Event('drawing-changed'));
+}
+
 canvas.addEventListener("mousedown", startDrawing);
 canvas.addEventListener("mousemove", draw);
 canvas.addEventListener("mouseup", stopDrawing);
 canvas.addEventListener("mouseleave", stopDrawing);
 
+canvas.addEventListener('drawing-changed', () => {
+    pen.clearRect(0, 0, canvas.width, canvas.height);
+    points.forEach(line => {
+        pen.beginPath();
+        line.forEach((point, index) => {
+            if (index === 0) {
+                pen.moveTo(point.x, point.y);
+            } else {
+                pen.lineTo(point.x, point.y);
+            }
+        });
+        pen.stroke();
+    });
+  
+    if (currentLine.length > 0) {
+        pen.beginPath();
+        currentLine.forEach((point, index) => {
+            if (index === 0) {
+                pen.moveTo(point.x, point.y);
+            } else {
+                pen.lineTo(point.x, point.y);
+            }
+        });
+        pen.stroke();
+    }
+});
+
 clearButton.addEventListener("click", () => {
+    points = [];
     pen.clearRect(0, 0, canvas.width, canvas.height);
 });
