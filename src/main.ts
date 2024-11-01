@@ -38,7 +38,7 @@ app.appendChild(redoButton);
 
 const pen = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-// Step 5 - Display 
+// Step 5 - Display commands
 class penLine {
     private points: { x: number, y: number }[] = [];
 
