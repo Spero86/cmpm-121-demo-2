@@ -27,10 +27,20 @@ const clearButton = createButton("Clear", "clearButton");
 clearButton.id = "clearButton";
 app.appendChild(clearButton);
 
+// Step 4 - Undo/Redo system
+const undoButton = createButton("Undo", "undoButton");
+undoButton.id = "undoButton";
+app.appendChild(undoButton);
+
+const redoButton = createButton("Redo", "redoButton");
+redoButton.id = "redoButton";
+app.appendChild(redoButton);
+
 let drawing = false;
 const pen = canvas.getContext("2d") as CanvasRenderingContext2D;
 let points: { x: number, y: number }[][] = [];
 let currentLine: { x: number, y: number }[] = [];
+let redoStack: { x: number, y: number }[][] = [];
 
 function getMousePosition(event: MouseEvent): { offsetX: number; offsetY: number } {
     const rect = canvas.getBoundingClientRect();
@@ -58,6 +68,7 @@ function stopDrawing(): void {
 
     if (drawing) {
         points.push(currentLine);
+        currentLine = []; 
         drawing = false;
         canvas.dispatchEvent(new Event('drawing-changed'));
     }
@@ -103,5 +114,28 @@ canvas.addEventListener('drawing-changed', () => {
 
 clearButton.addEventListener("click", () => {
     points = [];
+    currentLine = []; 
+    redoStack = [];
     pen.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.dispatchEvent(new Event('drawing-changed'));
+});
+
+undoButton.addEventListener('click', () => {
+    if (points.length > 0) {
+        const lastLine = points.pop();
+        if (lastLine) {
+            redoStack.push(lastLine);
+        }
+        canvas.dispatchEvent(new Event('drawing-changed'));
+    }
+});
+
+redoButton.addEventListener('click', () => {
+    if (redoStack.length > 0) {
+        const lastLine = redoStack.pop();
+        if (lastLine) {
+            points.push(lastLine);
+        }
+        canvas.dispatchEvent(new Event('drawing-changed'));
+    }
 });
