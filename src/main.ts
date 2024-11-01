@@ -43,10 +43,10 @@ const draw = (event: MouseEvent): void => {
     pen.lineWidth = 2;
     pen.lineCap = "round";
     pen.strokeStyle = "black";
-    pen.lineTo(x, y);
+    pen.lineTo(event.offsetX, event.offsetY);
     pen.stroke();
     pen.beginPath();
-    pen.moveTo(x, y);
+    pen.moveTo(event.offsetX, event.offsetY);
 };
 
 canvas.addEventListener("mousedown", startDrawing);
