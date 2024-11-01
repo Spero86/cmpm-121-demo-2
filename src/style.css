@@ -128,6 +128,7 @@ button:focus-visible {
   }
 }
 
+/* step 6 */
 .currentTool {
   background-color: #008080;
   color: white;
