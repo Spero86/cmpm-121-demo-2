@@ -42,6 +42,21 @@ h1 {
   text-align: center;
 }
 
+/* Step 1 */
+#canvasPad {
+  position: absolute;
+  border: 1px solid black;
+  width: 256px;
+  height: 256px;
+  display: block;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  border-radius: 8px; 
+  box-shadow: 2 2px 5px rgba(0, 0, 0, 0.3); 
+}
+
+
 .logo {
   height: 6em;
   padding: 1.5em;
