@@ -12,6 +12,10 @@ app.appendChild(header);
 
 const canvas = document.createElement("canvas");
 canvas.id = "canvasPad";
+canvas.width = 1920;
+canvas.height = 1080;
+canvas.style.width = "768px";
+canvas.style.height = "512px";
 app.appendChild(canvas);
 
 // Step 2 - Simple marker drawing
