@@ -29,8 +29,39 @@ const createButton = (text: string, id: string): HTMLButtonElement => {
 
 // Step 8 - Multiple stickers
 // Step 9 - Custom stickers
+
+const buttonContainer = document.createElement("div");
+buttonContainer.id = "buttonContainer";
+app.appendChild(buttonContainer);
+
+const clearButton = createButton("Clear", "clearButton");
+buttonContainer.appendChild(clearButton);
+
+const undoButton = createButton("Undo", "undoButton");
+buttonContainer.appendChild(undoButton);
+
+const redoButton = createButton("Redo", "redoButton");
+buttonContainer.appendChild(redoButton);
+
+const thinButton = createButton("Thin", "thinButton");
+buttonContainer.appendChild(thinButton);
+
+const thickButton = createButton("Thick", "thickButton");
+buttonContainer.appendChild(thickButton);
+
+const exportButton = createButton("Export", "exportButton");
+buttonContainer.appendChild(exportButton);
+
+const colorPicker = document.createElement('input');
+colorPicker.type = 'color';
+colorPicker.id = 'colorPicker';
+colorPicker.value = '#000000';
+buttonContainer.appendChild(colorPicker);
+
+buttonContainer.appendChild(document.createElement("br"));
+
 const customStickerButton = createButton("Custom Sticker", "customStickerButton");
-app.appendChild(customStickerButton);
+buttonContainer.appendChild(customStickerButton);
 
 const stickers = [
     { emoji: '🎸', id: 's1Button', rotate: true },
@@ -42,7 +73,7 @@ stickers.forEach(sticker => {
     const button = document.createElement('button');
     button.innerText = sticker.emoji;
     button.id = sticker.id;
-    app.appendChild(button);
+    buttonContainer.appendChild(button);
     button.addEventListener('click', () => {
         currentSticker = sticker.emoji;
         if (sticker.rotate) {
@@ -55,30 +86,6 @@ stickers.forEach(sticker => {
         canvas.dispatchEvent(new Event('tool-moved'));
     });
 });
-
-const clearButton = createButton("Clear", "clearButton");
-app.appendChild(clearButton);
-
-const undoButton = createButton("Undo", "undoButton");
-app.appendChild(undoButton);
-
-const redoButton = createButton("Redo", "redoButton");
-app.appendChild(redoButton);
-
-const thinButton = createButton("Thin", "thinButton");
-app.appendChild(thinButton);
-
-const thickButton = createButton("Thick", "thickButton");
-app.appendChild(thickButton);
-
-const exportButton = createButton("Export", "exportButton");
-app.appendChild(exportButton);
-
-const colorPicker = document.createElement('input');
-colorPicker.type = 'color';
-colorPicker.id = 'colorPicker';
-colorPicker.value = '#000000';
-app.appendChild(colorPicker);
 
 const pen = canvas.getContext("2d") as CanvasRenderingContext2D;
 

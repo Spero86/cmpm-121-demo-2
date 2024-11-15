@@ -46,6 +46,10 @@ h1 {
   text-align: center;
 }
 
+#buttonContainer button {
+  margin: 5px;
+}
+
 /* Step 1 */
 #canvasPad {
   border: 4px solid black;
