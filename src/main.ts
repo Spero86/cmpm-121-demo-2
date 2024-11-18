@@ -172,6 +172,8 @@ buttonsConfig.forEach(({ text, id, handler }) => {
     });
 });
 
+buttonContainer.appendChild(document.createElement("br"));
+
 // Add color picker
 const colorPicker = document.createElement("input");
 colorPicker.type = "color";
