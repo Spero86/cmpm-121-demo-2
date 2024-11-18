@@ -1,6 +1,6 @@
 import "./style.css";
 
-const APP_NAME = "Pixel Paint Pallete";
+const APP_NAME = "Pixel Paint Palette";
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
 document.title = APP_NAME;
@@ -18,74 +18,166 @@ canvas.style.width = "768px";
 canvas.style.height = "512px";
 app.appendChild(canvas);
 
-// Step 2 - Simple marker drawing
-// Step 3 - Display list and observer
-const createButton = (text: string, id: string): HTMLButtonElement => {
-    const button = document.createElement("button");
-    button.textContent = text;
-    button.id = id;
-    return button;
-};
-
-// Step 8 - Multiple stickers
-// Step 9 - Custom stickers
-
 const buttonContainer = document.createElement("div");
 buttonContainer.id = "buttonContainer";
 app.appendChild(buttonContainer);
 
-const clearButton = createButton("Clear", "clearButton");
-buttonContainer.appendChild(clearButton);
-
-const undoButton = createButton("Undo", "undoButton");
-buttonContainer.appendChild(undoButton);
-
-const redoButton = createButton("Redo", "redoButton");
-buttonContainer.appendChild(redoButton);
-
-const thinButton = createButton("Thin", "thinButton");
-buttonContainer.appendChild(thinButton);
-
-const thickButton = createButton("Thick", "thickButton");
-buttonContainer.appendChild(thickButton);
-
-const exportButton = createButton("Export", "exportButton");
-buttonContainer.appendChild(exportButton);
-
-const colorPicker = document.createElement('input');
-colorPicker.type = 'color';
-colorPicker.id = 'colorPicker';
-colorPicker.value = '#000000';
-buttonContainer.appendChild(colorPicker);
-
-buttonContainer.appendChild(document.createElement("br"));
-
-const customStickerButton = createButton("Custom Sticker", "customStickerButton");
-buttonContainer.appendChild(customStickerButton);
-
+// Sticker definitions
 const stickers = [
-    { emoji: '🎸', id: 's1Button', rotate: true },
-    { emoji: '😳', id: 's2Button', rotate: true },
-    { emoji: '🏀', id: 's3Button', rotate: true }
+    { emoji: "🎸", id: "s1Button", rotate: true },
+    { emoji: "😳", id: "s2Button", rotate: true },
+    { emoji: "🏀", id: "s3Button", rotate: true },
 ];
 
-stickers.forEach(sticker => {
-    const button = document.createElement('button');
-    button.innerText = sticker.emoji;
-    button.id = sticker.id;
-    buttonContainer.appendChild(button);
-    button.addEventListener('click', () => {
-        currentSticker = sticker.emoji;
-        if (sticker.rotate) {
-            randomizeRotation();
-        } else {
-            currentRotation = 0;
-        }
-        toolPreview = null;
-        updateCurrentTool(button);
-        canvas.dispatchEvent(new Event('tool-moved'));
+// Reusable button creation function
+function createAndAppendButton({
+    text,
+    id,
+    container,
+    clickHandler,
+}: {
+    text: string;
+    id: string;
+    container: HTMLElement;
+    clickHandler: () => void;
+}) {
+    const button = document.createElement("button");
+    button.textContent = text;
+    button.id = id;
+    button.addEventListener("click", clickHandler);
+    container.appendChild(button);
+    return button;
+}
+
+// Add predefined stickers as buttons
+stickers.forEach((sticker) => {
+    createAndAppendButton({
+        text: sticker.emoji,
+        id: sticker.id,
+        container: buttonContainer,
+        clickHandler: () => {
+            currentSticker = sticker.emoji;
+            currentRotation = sticker.rotate ? Math.floor(Math.random() * 360) : 0;
+            toolPreview = null;
+            updateCurrentTool(document.getElementById(sticker.id) as HTMLButtonElement);
+            canvas.dispatchEvent(new Event("tool-moved"));
+        },
     });
 });
+
+// Add functional buttons
+const buttonsConfig = [
+    {
+        text: "Clear",
+        id: "clearButton",
+        handler: () => {
+            points = [];
+            redoStack = [];
+            canvas.dispatchEvent(new Event("drawing-changed"));
+        },
+    },
+    {
+        text: "Undo",
+        id: "undoButton",
+        handler: () => {
+            if (points.length > 0) redoStack.push(points.pop()!);
+            canvas.dispatchEvent(new Event("drawing-changed"));
+        },
+    },
+    {
+        text: "Redo",
+        id: "redoButton",
+        handler: () => {
+            if (redoStack.length > 0) points.push(redoStack.pop()!);
+            canvas.dispatchEvent(new Event("drawing-changed"));
+        },
+    },
+    {
+        text: "Thin",
+        id: "thinButton",
+        handler: () => {
+            currentThickness = 1;
+            currentSticker = null;
+            updateCurrentTool(document.getElementById("thinButton") as HTMLButtonElement);
+        },
+    },
+    {
+        text: "Thick",
+        id: "thickButton",
+        handler: () => {
+            currentThickness = 5;
+            currentSticker = null;
+            updateCurrentTool(document.getElementById("thickButton") as HTMLButtonElement);
+        },
+    },
+    {
+        text: "Export",
+        id: "exportButton",
+        handler: () => {
+            const exportCanvas = document.createElement("canvas");
+            exportCanvas.width = 1920;
+            exportCanvas.height = 1080;
+            const exportContext = exportCanvas.getContext("2d")!;
+            exportContext.scale(4, 4);
+            points.forEach((item) => {
+                if ("points" in item) {
+                    displayLine(item, exportContext);
+                } else {
+                    displaySticker(item, exportContext);
+                }
+            });
+            exportCanvas.toBlob((blob) => {
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob!);
+                link.download = "sketchpad_export.png";
+                link.click();
+            });
+        },
+    },
+    {
+        text: "Custom Sticker",
+        id: "customStickerButton",
+        handler: () => {
+            const customSticker = prompt("Enter your custom sticker:", "♻️");
+            if (customSticker) {
+                const customStickerObj = {
+                    emoji: customSticker,
+                    id: `sticker${stickers.length + 1}Button`,
+                    rotate: false,
+                };
+                stickers.push(customStickerObj);
+                createAndAppendButton({
+                    text: customSticker,
+                    id: customStickerObj.id,
+                    container: buttonContainer,
+                    clickHandler: () => {
+                        currentSticker = customSticker;
+                        currentRotation = 0;
+                        toolPreview = null;
+                        updateCurrentTool(document.getElementById(customStickerObj.id) as HTMLButtonElement);
+                        canvas.dispatchEvent(new Event("tool-moved"));
+                    },
+                });
+            }
+        },
+    },
+];
+
+buttonsConfig.forEach(({ text, id, handler }) => {
+    createAndAppendButton({
+        text,
+        id,
+        container: buttonContainer,
+        clickHandler: handler,
+    });
+});
+
+// Add color picker
+const colorPicker = document.createElement("input");
+colorPicker.type = "color";
+colorPicker.id = "colorPicker";
+colorPicker.value = "#000000";
+buttonContainer.appendChild(colorPicker);
 
 const pen = canvas.getContext("2d") as CanvasRenderingContext2D;
 
@@ -182,7 +274,7 @@ let redoStack: (Line | Sticker)[] = [];
 let currentThickness = 1;
 let toolPreview: Preview | null = null;
 let currentSticker: string | null = null;
-let currentColor = '#000000';
+const currentColor = '#000000';
 let currentRotation = 0;
 
 // Utility functions
@@ -202,7 +294,7 @@ function updateCurrentTool(selectedButton: HTMLButtonElement) {
     selectedButton.classList.add('selectedTool');
 }
 
-function randomizeRotation() {
+function _randomizeRotation() {
     currentRotation = Math.floor(Math.random() * 360);
 }
 
@@ -295,89 +387,6 @@ canvas.addEventListener('tool-moved', () => {
             drawPreview(toolPreview, pen);
         }
     }
-});
-
-// Color picker and button events
-colorPicker.addEventListener('input', (event) => {
-    currentColor = (event.target as HTMLInputElement).value;
-});
-
-clearButton.addEventListener("click", () => {
-    points = [];
-    redoStack = [];
-    pen.clearRect(0, 0, canvas.width, canvas.height);
-    canvas.dispatchEvent(new Event('drawing-changed'));
-});
-
-undoButton.addEventListener('click', () => {
-    if (points.length > 0) {
-        const lastItem = points.pop();
-        if (lastItem) redoStack.push(lastItem);
-        canvas.dispatchEvent(new Event('drawing-changed'));
-    }
-});
-
-redoButton.addEventListener('click', () => {
-    if (redoStack.length > 0) {
-        const lastItem = redoStack.pop();
-        if (lastItem) points.push(lastItem);
-        canvas.dispatchEvent(new Event('drawing-changed'));
-    }
-});
-
-thinButton.addEventListener('click', () => {
-    currentThickness = 1;
-    currentSticker = null;
-    updateCurrentTool(thinButton);
-    canvas.dispatchEvent(new Event('tool-moved'));
-});
-
-thickButton.addEventListener('click', () => {
-    currentThickness = 5;
-    currentSticker = null;
-    updateCurrentTool(thickButton);
-    canvas.dispatchEvent(new Event('tool-moved'));
-});
-
-customStickerButton.addEventListener('click', () => {
-    const customSticker = prompt('Enter your custom sticker:', '♻️');
-    if (customSticker) {
-        const customStickerObj = { emoji: customSticker, id: `sticker${stickers.length + 1}Button`, rotate: false };
-        stickers.push(customStickerObj);
-        const button = document.createElement('button');
-        button.innerText = customSticker;
-        button.id = customStickerObj.id;
-        app.appendChild(button);
-        button.addEventListener('click', () => {
-            currentSticker = customSticker;
-            currentRotation = 0;
-            toolPreview = null;
-            updateCurrentTool(button);
-            canvas.dispatchEvent(new Event('tool-moved'));
-        });
-    }
-});
-
-exportButton.addEventListener('click', () => {
-    const exportCanvas = document.createElement('canvas');
-    exportCanvas.width = 1024;
-    exportCanvas.height = 1024;
-    const exportContext = exportCanvas.getContext('2d')!;
-    exportContext.scale(4, 4);
-    points.forEach(item => {
-        if ('points' in item) {
-            displayLine(item, exportContext);
-        } else {
-            displaySticker(item, exportContext);
-        }
-    });
-
-    exportCanvas.toBlob(blob => {
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob!);
-        link.download = 'sketchpad_export.png';
-        link.click();
-    });
 });
 
 // Mouse event listeners for canvas interaction
